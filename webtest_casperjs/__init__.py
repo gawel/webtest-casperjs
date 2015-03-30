@@ -11,7 +11,6 @@ import tempfile
 import shutil
 import time
 import sys
-import re
 import os
 
 log = logging.getLogger('nose.casperjs')
@@ -43,9 +42,6 @@ class TestApp(testapp.TestApp):
         """Close WSGI server if needed"""
         if self.server:
             self.server.shutdown()
-
-_re_result = re.compile(
-   r'.*([0-9]+ tests executed in [0-9\.]+s, [0-9]+ passed, ([0-9]+) failed).*')
 
 
 @contextmanager
@@ -85,17 +81,7 @@ def casperjs(test_app, timeout=60):
             if isinstance(output, binary_type):
                 output = output.decode('utf8', 'replace')
 
-            fail = True
-            match = _re_result.match(output.replace('\n', ' '))
-            if match is not None:
-                text, failed = match.groups()
-                if int(failed):
-                    fail = True
-                else:
-                    fail = False
-                    stderr.write(text + ' ')
-
-            if fail:
+            if p.returncode != 0:
                 print(output)
                 raise AssertionError(
                     'Failure while running %s' % ' '.join(cmd))
